@@ -12,7 +12,7 @@
 
   - since python does not support the zlib.inflate algorithm,
 
-  ​       unpacking .vdm couldn't implement yet.
+    unpacking .vdm couldn't implement yet.
 
   - so you have to use other .vdm decompression tools.
 
