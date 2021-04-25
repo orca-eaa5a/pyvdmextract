@@ -1,6 +1,6 @@
 # pyvdmextract
 
-##### - Extract the emulated file which in the Windows Defender
+##### Extract the emulated file which in the Windows Defender
 
 - parse mpasbase.vdm and extract the emulated file and its contents
 

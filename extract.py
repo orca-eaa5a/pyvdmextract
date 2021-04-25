@@ -58,17 +58,31 @@ class VdmExtractor(object):
             container_offset = _bin.find(SIGNATURE)
             if container_offset == -1:
                 break
-            hdr = mp._FILE_CONTAINER(self.ptr_sz).cast(_bin[container_offset:])
-            file_name = read_wide_stirng(bytes(hdr.file_name))
-            o_file_name = file_name
-            file_content = hdr.get_file_contents(_bin, container_offset)
-            _bin = _bin[container_offset + (hdr.sizeof() + len(file_content)):]
-            file_name = file_name.replace(":", ";").replace("\\","-")
-            if file_name in self.file_name_list:
-                file_name = file_name + "." + str(random.randint(0, 0xffff))
-            with open(self.DROP_PATH + "/" + file_name, "wb") as f:
-                f.write(file_content)
-            self.file_name_list.append(file_name)
+            hdr_list = []
+            _bin = _bin[container_offset:]
+            while True:
+                hdr = mp._FILE_CONTAINER_HDR(self.ptr_sz).cast(_bin)
+                hdr_list.append(hdr)
+                _bin = _bin[hdr.sizeof():]
+                if _bin.startswith(SIGNATURE):
+                    continue
+                elif _bin[len(b'\x83\x51\x02\x00'):].startswith(SIGNATURE):
+                    _bin = _bin[len(b'\x83\x51\x02\x00'):]
+                    continue
+                else:
+                    break
+
+            file_content = hdr.get_file_contents(_bin)
+            for hdr in hdr_list:
+                file_name = read_wide_stirng(bytes(hdr.file_name))
+                file_name = file_name.replace(":", ";").replace("\\","-")
+                if file_name in self.file_name_list:
+                    file_name = file_name + "." + str(random.randint(0, 0xffff))
+                with open(self.DROP_PATH + "/" + file_name, "wb") as f:
+                    f.write(file_content)
+                self.file_name_list.append(file_name)
+
+            _bin = _bin[len(file_content):]
 
     def __check_valid_pe(self, _bin):
         dos_hdr = windows._IMAGE_DOS_HEADER(self.ptr_sz).cast(_bin)
@@ -122,9 +136,6 @@ if __name__ == "__main__":
     
     sd = SignatureDatabase(ptr_sz, target_file)
     vdm_ext = VdmExtractor((DROP_PATH, DLL_DROP_PATH), sd)
-    _bin = sd._bin
-    db_sz = len(_bin)
-    idx = 0
 
     dll_extractor = Process(target=vdm_ext.extract_dlls)
     file_extractor = Process(target=vdm_ext.extract_files)

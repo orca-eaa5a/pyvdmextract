@@ -65,7 +65,7 @@ class _CDATA_HEADER_NIS(WinStruct):
         self.utf8marker = ctypes.c_byte*3
         self.data = Ptr
 
-class _FILE_CONTAINER(WinStruct):
+class _FILE_CONTAINER_HDR(WinStruct):
     def __init__(self, ptr_sz):
         super().__init__(ptr_sz)
         self.sig = ctypes.c_uint32*8
@@ -74,8 +74,19 @@ class _FILE_CONTAINER(WinStruct):
         self.padd2 = ctypes.c_uint32
         self.file_name = ctypes.c_byte*548
     
-    def get_file_contents(self, buf, container_offset):
-        file_contents_offset = container_offset + _FILE_CONTAINER(4).sizeof()
-        file_contents = buf[file_contents_offset : file_contents_offset + self.size_of_file]
+    def get_file_contents(self, buf):
+        file_contents = buf[:self.size_of_file]
+
+        return file_contents
+
+class _DLL_CONTAINER_HDR(WinStruct):
+    def __init__(self, ptr_sz):
+        super().__init__(ptr_sz)
+        self.signature = ctypes.c_byte*4
+        self.size_of_file = ctypes.c_uint32
+        self.dll_name = ctypes.c_byte*80
+    
+    def get_dll_contents(self, buf):
+        file_contents = buf[:self.size_of_file]
 
         return file_contents
