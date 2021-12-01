@@ -149,3 +149,17 @@ class _IMAGE_NT_HEADER(WinStruct):
         self.signature = ctypes.c_uint32
         self.file_hdr = _IMAGE_FILE_HEADER(ptr_sz).get_cstruct()
         self.opt_hdr = _IMAGE_OPTIONAL_HEADER(ptr_sz).get_cstruct()
+
+class _IMAGE_SECTION_HEADER(WinStruct):
+    def __init__(self, ptr_sz):
+        super().__init__(ptr_sz)
+        self.name = ctypes.c_char*8
+        self.virtual_size = ctypes.c_int32
+        self.virtual_address = ctypes.c_int32
+        self.size_of_raw_data = ctypes.c_int32
+        self.pointer_to_raw_data = ctypes.c_int32
+        self.pointer_to_relocs = ctypes.c_int32
+        self.pointer_to_line_numbers = ctypes.c_int32
+        self.number_of_relocs = ctypes.c_int16
+        self.number_of_line_nums =ctypes.c_int16
+        self.characteriscs = ctypes.c_int32

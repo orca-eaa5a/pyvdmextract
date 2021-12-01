@@ -68,10 +68,14 @@ class _CDATA_HEADER_NIS(WinStruct):
 class _FILE_CONTAINER_HDR(WinStruct):
     def __init__(self, ptr_sz):
         super().__init__(ptr_sz)
-        self.sig = ctypes.c_uint32*8
+        #self.file_id = ctypes.c_uint32
+        self.unk1 = ctypes.c_uint32
+        self.mtime = ctypes.c_byte*8
+        self.atime = ctypes.c_byte*8
+        self.ctime = ctypes.c_byte*8
+        self.unk2 = ctypes.c_uint32
         self.size_of_file = ctypes.c_uint32
-        self.padd1 = ctypes.c_uint32
-        self.padd2 = ctypes.c_uint32
+        self.unk3 = ctypes.c_byte*8
         self.file_name = ctypes.c_byte*548
     
     def get_file_contents(self, buf):

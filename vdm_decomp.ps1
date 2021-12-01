@@ -34,12 +34,13 @@ Outputs a FileInfo object indicating successful extraction of the .VDM file.
     param (
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [String]
-        [Alias('FullName')]
+        [Alias('vdm')]
         [ValidateScript({$_.EndsWith('.vdm')})]
         $FilePath,
 
         [Parameter(Mandatory)]
         [String]
+        [Alias('out')]
         [ValidateNotNullOrEmpty()]
         $OutputFileName
     )
