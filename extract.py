@@ -47,7 +47,7 @@ class VdmExtractor(object):
         mtime = int.from_bytes(hdr_cand.mtime, "little")
         atime = int.from_bytes(hdr_cand.atime, "little")
         ctime = int.from_bytes(hdr_cand.ctime, "little")
-        if hdr_cand.unk1 == 0x20 and \
+        if (hdr_cand.unk1 >= 0x20 and hdr_cand.unk1 < 0x30)and \
             hdr_cand.unk2 == 0 and \
                 padd == 0 and \
                     (mtime != 0 and atime != 0 and ctime != 0) and\
@@ -67,7 +67,7 @@ class VdmExtractor(object):
         fheader_sz = mp._FILE_CONTAINER_HDR(self.ptr_sz).sizeof()
         abs_offset = 0
         _bin = self.sd._bin
-        hdr_regex = re.compile(b'\x20\x00\x00\x00.{24}\x00{4}.{4}\x00{8}')
+        hdr_regex = re.compile(b'[\x20-\x29]\x00\x00\x00.{24}\x00{4}.{4}\x00{8}')
         while True:
             #container_offset = _bin.find(b'\x20\x00\x00\x00[\x00-\xff]{24}\x00{4}[\x00-\xff]{4}\x00{8}')
             r = re.search(hdr_regex, _bin)
@@ -103,7 +103,7 @@ class VdmExtractor(object):
                         self.file_write(FILE_DROP_PATH, fname, bstream.read(header.size_of_file))
                     _bin = _bin[header_chain[0].size_of_file:]
                 else:
-                    fname = fname = read_wide_stirng(bytes(header.file_name)).replace("\\", "_").replace(":", ";")
+                    fname = read_wide_stirng(bytes(hdr_cand.file_name)).replace("\\", "_").replace(":", ";")
                     self.file_write(FILE_DROP_PATH, fname, contents_buf)
                     _bin = _bin[fheader_sz + hdr_cand.size_of_file:]
                     abs_offset += (fheader_sz + hdr_cand.size_of_file)
@@ -152,20 +152,37 @@ FILE_DROP_PATH = os.path.join(os.getcwd(), "files")
 DLL_DROP_PATH = os.path.join(os.getcwd(), "dlls")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print("input mpasbase.vdm")
         sys.exit()
     
+    if sys.argv[1] in ("-h", "--help"):
+        print("python extract.py [vdm_file] -option")
+        print("options > ")
+        print("-d : disable extract dlls")
+        print("-f : disable extract files")
+        exit(0)
+
+    print("extraction started!")
+
     target_file = sys.argv[1]
+    disable_dll_extraction = False
+    disable_extract_files = False
     out_file = target_file + ".unp"
     ps_extractor = "vdm_decomp.ps1"
     ptr_sz = 4
+
+    if "-d" in sys.argv:
+        disable_dll_extraction = True
+    if "-f" in sys.argv:
+        disable_extract_files = True
 
     if not os.path.exists(FILE_DROP_PATH):
         os.makedirs(FILE_DROP_PATH)
     
     if not os.path.exists(DLL_DROP_PATH):
         os.makedirs(DLL_DROP_PATH)
+
     if not os.path.exists(os.path.join(os.getcwd(), out_file)):
         p = subprocess.Popen([
             "powershell.exe",
@@ -187,13 +204,14 @@ if __name__ == "__main__":
     sd = SignatureDatabase(ptr_sz, out_file)
     vdm_ext = VdmExtractor(sd)
 
-    dll_extractor = Process(target=vdm_ext.extract_dlls)
-    file_extractor = Process(target=vdm_ext.extract_mock_files)
-
-    dll_extractor.start()
-    file_extractor.start()
-
-    file_extractor.join()
-    dll_extractor.join()
+    if not disable_dll_extraction:
+        dll_extractor = Process(target=vdm_ext.extract_dlls)
+        dll_extractor.start()
+        dll_extractor.join()
+    
+    if not disable_extract_files:
+        file_extractor = Process(target=vdm_ext.extract_mock_files)
+        file_extractor.start()
+        file_extractor.join()
     
     print("VDM Extract Finished")
